@@ -1,0 +1,10 @@
+{
+    "name": "wdrmediathek",
+    "hostprefix": "wdr.de",
+    "displayname": "WDR Mediathek",
+    "version": "0.1",
+    "authentication": "no",
+    "module": "wdrmediathek.php",
+    "class": "SynoFileHostingWDRMediathek",
+    "description": "Download Videos from WDR Mediathek"
+}
