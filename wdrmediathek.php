@@ -2,53 +2,17 @@
 
 /**
  * @author Daniel Gehn <me@theinad.com>
- * @version 0.1
+ * @version 0.2a
  * @copyright 2015 Daniel Gehn
  * @license http://opensource.org/licenses/MIT Licensed under MIT License
  */
 
-class SynoFileHostingWDRMediathek {
-    private $Url;
-    private $Username;
-    private $Password;
-    private $HostInfo;
+require_once "provider.php";
 
-    private $LogPath = '/tmp/wdr-mediathek.log';
-    private $LogEnabled = false;
+class SynoFileHostingWDRMediathek extends TheiNaDProvider {
+    protected $LogPath = '/tmp/wdr-mediathek.log';
 
-    public function __construct($Url, $Username = '', $Password = '', $HostInfo = '') {
-        $this->Url = $Url;
-        $this->Username = $Username;
-        $this->Password = $Password;
-        $this->HostInfo = $HostInfo;
-
-        $this->DebugLog("URL: $Url");
-    }
-
-    //This function returns download url.
     public function GetDownloadInfo() {
-        $ret = FALSE;
-
-        $this->DebugLog("GetDownloadInfo called");
-
-        $ret = $this->Download();
-
-        return $ret;
-    }
-
-    public function onDownloaded()
-    {
-    }
-
-    public function Verify($ClearCookie = '')
-    {
-        $this->DebugLog("Verifying User");
-
-        return USER_IS_PREMIUM;
-    }
-
-    //This function gets the download url
-    private function Download() {
         $this->DebugLog("Getting download url $this->Url");
 
         $curl = curl_init();
@@ -67,6 +31,12 @@ class SynoFileHostingWDRMediathek {
         }
 
         curl_close($curl);
+
+        $title = "";
+
+        if(preg_match('#<title>Video:\s*(.*?)\s*-\s*WDR Mediathek<\/title>#si', $rawXML, $match) === 1) {
+            $title = $match[1];
+        }
 
         if(preg_match('#class="videoLink"\s*>\s*<a href="(.*?)"#si', $rawXML, $match) === 1)
         {
@@ -88,7 +58,6 @@ class SynoFileHostingWDRMediathek {
             }
 
             curl_close($curl);
-
 
             preg_match_all('#<a\s*rel="\w*"\s*href="(.*?)"#si', $RawXMLData, $matches);
 
@@ -117,29 +86,40 @@ class SynoFileHostingWDRMediathek {
 
             if($bestSource['url'] !== '')
             {
+                $url = trim($bestSource['url']);
+
                 $DownloadInfo = array();
-                $DownloadInfo[DOWNLOAD_URL] = trim($bestSource['url']);
+                $DownloadInfo[DOWNLOAD_URL] = $url;
+                $DownloadInfo[DOWNLOAD_FILENAME] = $this->buildFilename($url, $title);
 
                 return $DownloadInfo;
             }
 
             $this->DebugLog("Failed to determine best quality: " . json_encode($matches[1]));
 
-            return FALSE;
+            return false;
 
         }
 
         $this->DebugLog("Couldn't identify player meta");
 
-        return FALSE;
+        return false;
     }
 
-    private function DebugLog($message)
-    {
-        if($this->LogEnabled === true)
+    protected function buildFilename($url, $title = "") {
+        $pathinfo = pathinfo($url);
+
+        if(!empty($title))
         {
-            file_put_contents($this->LogPath, $message . "\n", FILE_APPEND);
+            $filename = $title . '.' . $pathinfo['extension'];
         }
+        else
+        {
+            $filename =  $pathinfo['basename'];
+        }
+
+        return $this->safeFilename($filename);
     }
+
 }
 ?>

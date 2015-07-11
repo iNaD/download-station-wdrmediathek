@@ -2,7 +2,7 @@
     "name": "wdrmediathek",
     "hostprefix": "wdr.de",
     "displayname": "WDR Mediathek",
-    "version": "0.1",
+    "version": "0.2a",
     "authentication": "no",
     "module": "wdrmediathek.php",
     "class": "SynoFileHostingWDRMediathek",
