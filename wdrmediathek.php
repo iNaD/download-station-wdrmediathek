@@ -15,22 +15,12 @@ class SynoFileHostingWDRMediathek extends TheiNaDProvider {
     public function GetDownloadInfo() {
         $this->DebugLog("Getting download url $this->Url");
 
-        $curl = curl_init();
+        $rawXML = $this->curlRequest($this->Url);
 
-        curl_setopt($curl, CURLOPT_URL, $this->Url);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_USERAGENT, DOWNLOAD_STATION_USER_AGENT);
-        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-
-        $rawXML = curl_exec($curl);
-
-        if(!$rawXML)
+        if($rawXML === null)
         {
-            $this->DebugLog("Failed to retrieve Website. Error Info: " . curl_error($curl));
             return false;
         }
-
-        curl_close($curl);
 
         $title = "";
 
@@ -40,24 +30,14 @@ class SynoFileHostingWDRMediathek extends TheiNaDProvider {
 
         if(preg_match('#class="videoLink"\s*>\s*<a href="(.*?)"#si', $rawXML, $match) === 1)
         {
-            $curl = curl_init();
-
             $this->DebugLog("Fetching http://www1.wdr.de$match[1]");
 
-            curl_setopt($curl, CURLOPT_URL, 'http://www1.wdr.de' . $match[1]);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_USERAGENT, DOWNLOAD_STATION_USER_AGENT);
-            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+            $RawXMLData = $this->curlRequest('http://www1.wdr.de' . $match[1]);
 
-            $RawXMLData = curl_exec($curl);
-
-            if(!$RawXMLData)
+            if($RawXMLData === null)
             {
-                $this->DebugLog("Failed to retrieve XML. Error Info: " . curl_error($curl));
                 return false;
             }
-
-            curl_close($curl);
 
             preg_match_all('#<a\s*rel="\w*"\s*href="(.*?)"#si', $RawXMLData, $matches);
 
